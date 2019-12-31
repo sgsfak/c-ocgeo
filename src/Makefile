@@ -3,7 +3,9 @@ OBJ=$(SOURCES:.c=.o)
 LIB=libocgeo
 STATIC=$(LIB).a
 
-CFLAGS+=-Wall -Werror -fPIC -std=c99 -pedantic -O3
+GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
+
+CFLAGS+=-Wall -Werror -fPIC -std=c99 -pedantic -O3 -DOCGEO_VERSION=\"$(GIT_VERSION)\"
 LDLIBS=-lcurl
 
 all: $(STATIC) example

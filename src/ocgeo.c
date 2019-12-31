@@ -13,6 +13,12 @@
 #define OCG_API_SERVER "https://api.opencagedata.com/geocode/v1/json"
 #endif
 
+#ifndef OCGEO_VERSION
+#define OCGEO_VERSION 0.1.0
+#endif
+
+char* ocgeo_version = OCGEO_VERSION;
+
 static struct ocgeo_latlng ocgeo_invalid_bounds = {.lat = -91.0, .lng=-181};
 
 static
@@ -168,11 +174,16 @@ do_request(int is_fwd, const char* q, const char* api_key,
     fprintf(stderr, "URL=%s\n", url);
 
     struct http_response r; r.data = sdsempty();
+    sds user_agent = sdsempty();
+    user_agent = sdscatprintf(user_agent, "c-ocgeo/%s (%s)", ocgeo_version, curl_version());
+    fprintf(stderr, "user agent: %s\n", user_agent);
     curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &r);
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
+    sdsfree(user_agent);
 
     if (res != CURLE_OK) {
         sdsfree(r.data);

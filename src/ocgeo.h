@@ -180,6 +180,8 @@ int ocgeo_is_valid_bounds(struct ocgeo_latlng_bounds* bbox)
 	 	&& ocgeo_is_valid_latlng(bbox->southwest);
 }
 
+extern char* ocgeo_version;
+
 #ifdef __cplusplus
 }
 #endif
