@@ -11,7 +11,7 @@ We assume a POSIX compliant environment. We have tested it in MacOSX and OpenBSD
 * [cJSON](https://github.com/DaveGamble/cJSON), an ultralightweight JSON parser in ANSI C
 * [Simple Dynamic Strings (sds)](https://github.com/antirez/sds) (version 1.0.0) as a string library
 
-There is a (GNU) Makefile for building it as a static library (`libocgeo.a`) but you are free to copy the source files and use you own build process. You may need to adjust the Makefile if for example the header files and library file of libcurl is not installed in some "well-known" directory (ususally `/usr/local/include` and `/usr/local/lib` respectively).
+There is a (GNU) Makefile for building it as a static library (`libocgeo.a`) but you are free to copy the source files and use you own build process. You may need to adjust the Makefile if for example the header files and library file of libcurl is not installed in some "well-known" directory (usually `/usr/local/include` and `/usr/local/lib` respectively).
 
 ## Usage
 
@@ -24,8 +24,7 @@ You can see the `example.c` file for an example. The recommended use is as follo
 * Initialization of an `ocgeo_params` struct that contains various ([optional](https://opencagedata.com/api#forward-opt)) parameters for the request:
 
   ```C
-  struct ocgeo_params params;
-  ocgeo_params_init(&params);
+  ocgeo_params_t params = ocgeo_default_params_init();
   ```
 
 * The user can then overwrite the default parameters if s/he so wishes, e.g.
@@ -39,7 +38,7 @@ You can see the `example.c` file for an example. The recommended use is as follo
 * Make a "forward" request providing the API key and your query:
 
   ```C
-  struct ocgeo_response response;
+  ocgeo_response_t response;
   const char* query = "Syena, Aswan Governorate, Egypt";
   ocgeo_forward(query, api_key, &params, &response);
   ```
@@ -69,7 +68,7 @@ You can see the `example.c` file for an example. The recommended use is as follo
   ```C
   printf("Got %d results:\n", response.total_results);
   for (int i=0; i<response.total_results; ++i) {
-     struct ocgeo_result* result = response.results + i;
+     ocgeo_result_t* result = response.results + i;
      printf("%2d. %s (type: %s, conf:%d)\n", i+1, 
          result->formatted, result->type, result->confidence);
   }

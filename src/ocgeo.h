@@ -18,45 +18,45 @@ extern "C" {
 #define OCGEO_CODE_MANY_REQUESTS (429)	/* Too many requests (too quickly, rate limiting) */
 #define OCGEO_CODE_INTERNAL_ERROR (503)	/* Internal server error  */
 
-struct ocgeo_status {
+typedef struct ocgeo_status {
 	int code;
 	char* message;
-};
+} ocgeo_status_t;
 
-struct ocgeo_rate_info {
+typedef struct ocgeo_rate_info {
     int limit;
     int remaining;
     int reset;
-};
+} ocgeo_rate_info_t;
 
 /*
  * A point using the geographic coordinate reference system, using the World 
  * Geodetic System 1984 (WGS 84), with longitude and latitude units of decimal
  * degrees
  */
-struct ocgeo_latlng {
+typedef struct ocgeo_latlng {
 	double lat;
 	double lng;
-};
+} ocgeo_latlng_t;
 
 
 /*
  * A "bounding box" providing the SouthWest and NorthEast points:
  */
-struct ocgeo_latlng_bounds {
-	struct ocgeo_latlng northeast;
-	struct ocgeo_latlng southwest;
-};
+typedef struct ocgeo_latlng_bounds {
+	ocgeo_latlng_t northeast;
+	ocgeo_latlng_t southwest;
+} ocgeo_latlng_bounds_t;
 
 /*
  * A matching result in the API's response. 
  */
-struct ocgeo_result {
+typedef struct ocgeo_result {
 	int confidence;
 	char* formatted;
 
 	/* "bounds", may be "null" (invalid): */
-	struct ocgeo_latlng_bounds bounds;
+	ocgeo_latlng_bounds_t bounds;
 
 	/* "components": */
 	char* ISO_alpha2;
@@ -76,24 +76,24 @@ struct ocgeo_result {
 	char* state;
 	char* state_district;
 	char* suburb;
-};
+} ocgeo_result_t;
 
-struct ocgeo_response {
+typedef struct ocgeo_response {
 	/* Returned status */
-	struct ocgeo_status status;
+	ocgeo_status_t status;
 
 	/* Rate information. If not returned (e.g. for paying customers)
 	   all its fields should be 0.
 	 */
-	struct ocgeo_rate_info rateInfo;
+	ocgeo_rate_info_t rateInfo;
 
 	int total_results;
-	struct ocgeo_result* results;
+	ocgeo_result_t* results;
 
 	void* internal;
-};
+} ocgeo_response_t;
 
-struct ocgeo_params {
+typedef struct ocgeo_params {
 	void* callback_data;
 	void (*dbg_callback)(const char*, void*);
 
@@ -106,7 +106,7 @@ struct ocgeo_params {
 	
 	/* Used only for forward geocoding. This value will restrict the possible 
 	   results to a defined bounding box. */
-	struct ocgeo_latlng_bounds bounds;
+	ocgeo_latlng_bounds_t bounds;
 	
 	/* Used only for forward geocoding. Restricts results to the specified 
 	   country/territory or countries. The country code is a two letter code as 
@@ -143,22 +143,22 @@ struct ocgeo_params {
 	   bias results in favour of those closer to the specified location. Please 
 	   note though, this is just one of many factors in the internal scoring we 
 	   use for ranking results. */
-	struct ocgeo_latlng proximity;
+	ocgeo_latlng_t proximity;
 
 	/* When set to 1 the behaviour of the geocoder is changed to 
 	   attempt to match the nearest road (as opposed to address). */
 	int roadinfo;
-};
+} ocgeo_params_t;
 
-extern void ocgeo_params_init(struct ocgeo_params* params);
-extern int ocgeo_forward(const char* query, const char* api_key, struct ocgeo_params* params, struct ocgeo_response* response);
-extern int ocgeo_reverse(double lat, double lng, const char* api_key, struct ocgeo_params* params, struct ocgeo_response* response);
-extern void ocgeo_response_cleanup(struct ocgeo_response* r);
+extern ocgeo_params_t ocgeo_default_params(void);
+extern ocgeo_response_t* ocgeo_forward(const char* query, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+extern ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+extern void ocgeo_response_cleanup(ocgeo_response_t* r);
 
 /* Some utils: */
 
 static inline
-int ocgeo_response_ok(struct ocgeo_response* response)
+int ocgeo_response_ok(ocgeo_response_t* response)
 {
     if (response == NULL)
         return 0;
@@ -166,14 +166,14 @@ int ocgeo_response_ok(struct ocgeo_response* response)
 }
 
 static inline
-int ocgeo_is_valid_latlng(struct ocgeo_latlng coords)
+int ocgeo_is_valid_latlng(ocgeo_latlng_t coords)
 {
 	return -90.0 <=coords.lat && coords.lat <= 90.0 &&
 		-180.0 <=coords.lng && coords.lng <= 180.0;
 }
 
 static inline
-int ocgeo_is_valid_bounds(struct ocgeo_latlng_bounds* bbox)
+int ocgeo_is_valid_bounds(ocgeo_latlng_bounds_t* bbox)
 {
 	return bbox != NULL
 		&& ocgeo_is_valid_latlng(bbox->northeast)

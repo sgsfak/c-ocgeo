@@ -19,14 +19,7 @@
 
 char* ocgeo_version = OCGEO_VERSION;
 
-static struct ocgeo_latlng ocgeo_invalid_bounds = {.lat = -91.0, .lng=-181};
-
-static
-struct ocgeo_params ocgeo_default_params = {
-    .dbg_callback = NULL, .callback_data = NULL,
-    .countrycode = NULL, .language = NULL,
-    .no_annotations = 1
-};
+static ocgeo_latlng_t ocgeo_invalid_bounds = {.lat = -91.0, .lng=-181};
 
 struct http_response {
     sds data;
@@ -45,18 +38,18 @@ write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
 #define JSON_OBJ_GET_INT(obj,name) (cJSON_GetObjectItemCaseSensitive(obj,name)->valueint)
 
 static inline void
-parse_latlng(cJSON* json, struct ocgeo_latlng* latlng)
+parse_latlng(cJSON* json, ocgeo_latlng_t* latlng)
 {
     latlng->lat = cJSON_GetObjectItemCaseSensitive(json,"lat")->valuedouble;
     latlng->lng = cJSON_GetObjectItemCaseSensitive(json,"lng")->valuedouble;
 }
 
 static int
-parse_response_json(cJSON* json, struct ocgeo_response* response)
+parse_response_json(cJSON* json, ocgeo_response_t* response)
 {
     cJSON* obj = NULL;
 
-    memset(response, 0, sizeof(struct ocgeo_response));
+    memset(response, 0, sizeof(ocgeo_response_t));
     response->results = NULL;
     response->internal = json;
 
@@ -80,14 +73,14 @@ parse_response_json(cJSON* json, struct ocgeo_response* response)
         return 0;
     }
 
-    response->results = calloc(response->total_results, sizeof(struct ocgeo_result));
+    response->results = calloc(response->total_results, sizeof(ocgeo_result_t));
     obj = cJSON_GetObjectItemCaseSensitive(json, "results");
     assert(obj);
 
     cJSON* result_js;
     int k = 0;
     for (result_js = obj->child; result_js!= NULL; result_js = result_js->next, k++) {
-        struct ocgeo_result* result = response->results + k;
+        ocgeo_result_t* result = response->results + k;
         result->confidence = JSON_OBJ_GET_INT(result_js,"confidence");
         result->formatted = JSON_OBJ_GET_STR(result_js,"formatted");
 
@@ -125,15 +118,18 @@ parse_response_json(cJSON* json, struct ocgeo_response* response)
     return 0;
 }
 
-static int
+static ocgeo_response_t*
 do_request(int is_fwd, const char* q, const char* api_key, 
-           struct ocgeo_params* params, struct ocgeo_response* response)
+           ocgeo_params_t* params, ocgeo_response_t* response)
 {
-    CURLcode res;
+    if (params == NULL) {
+        ocgeo_params_t params = ocgeo_default_params();
+        return do_request(is_fwd, q, api_key, &params, response);
+    }
 
     CURL *curl = curl_easy_init();
     if (curl == NULL) {
-        return 1;
+        return NULL;
     }
 
     // Build URL:
@@ -176,25 +172,24 @@ do_request(int is_fwd, const char* q, const char* api_key,
     struct http_response r; r.data = sdsempty();
     sds user_agent = sdsempty();
     user_agent = sdscatprintf(user_agent, "c-ocgeo/%s (%s)", ocgeo_version, curl_version());
-    fprintf(stderr, "user agent: %s\n", user_agent);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &r);
-    res = curl_easy_perform(curl);
+    CURLcode res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     sdsfree(user_agent);
 
     if (res != CURLE_OK) {
         sdsfree(r.data);
-        return 1;
+        return NULL;
     }
 
     cJSON* json = cJSON_Parse(r.data);
     sdsfree(r.data);
 
     if (json == NULL)
-        return 1;
+        return NULL;
 
     if (params->dbg_callback != NULL) {
         char* str = cJSON_Print(json);
@@ -203,35 +198,40 @@ do_request(int is_fwd, const char* q, const char* api_key,
     }
 
     parse_response_json(json, response);
-    return 0;
+    return response;
 }
 
-void ocgeo_params_init(struct ocgeo_params* params)
+ocgeo_params_t ocgeo_default_params(void)
 {
-    *params = ocgeo_default_params;
-    params->proximity = ocgeo_invalid_bounds;
-    params->bounds.southwest = ocgeo_invalid_bounds;
-    params->bounds.northeast = ocgeo_invalid_bounds;
+
+    ocgeo_params_t params = {
+        .dbg_callback = NULL, .callback_data = NULL,
+        .countrycode = NULL, .language = NULL,
+        .no_annotations = 1
+    };
+    params.proximity = ocgeo_invalid_bounds;
+    params.bounds.southwest = ocgeo_invalid_bounds;
+    params.bounds.northeast = ocgeo_invalid_bounds;
+    return params;
 }
 
-int ocgeo_forward(const char* q, const char* api_key,
-        struct ocgeo_params* params, struct ocgeo_response* response)
+ocgeo_response_t* ocgeo_forward(const char* q, const char* api_key,
+        ocgeo_params_t* params, ocgeo_response_t* response)
 {
-    int ok = do_request(1, q, api_key, params, response);
-    return ok;
+    return do_request(1, q, api_key, params, response);
 }
 
-int ocgeo_reverse(double lat, double lng, const char* api_key,
-        struct ocgeo_params* params, struct ocgeo_response* response)
+ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key,
+        ocgeo_params_t* params, ocgeo_response_t* response)
 {
     sds q = sdsempty();
     q = sdscatprintf(q, "%.8F,%.8F", lat, lng);
-    int ok = do_request(0, q, api_key, params, response);
+    ocgeo_response_t* r = do_request(0, q, api_key, params, response);
     sdsfree(q);
-    return ok;
+    return r;
 }
 
-void ocgeo_response_cleanup(struct ocgeo_response* r)
+void ocgeo_response_cleanup(ocgeo_response_t* r)
 {
     if (r == NULL)
         return;

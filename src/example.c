@@ -18,8 +18,7 @@ int main(int argc, char* argv[])
     const char* query = argv[2];
 
     /* Initialize parameters with the default values: */
-    struct ocgeo_params params;
-    ocgeo_params_init(&params);
+    struct ocgeo_params params = ocgeo_default_params();
     /* and then overwrite them if you wish: */
     params.language = "en";
     // params.min_confidence = 3;
