@@ -36,10 +36,14 @@ int main(int argc, char* argv[])
             struct ocgeo_result* result = response.results + i;
             printf("%2d. %s (type: %s, conf:%d)\n", i+1, 
                 result->formatted, result->type, result->confidence);
+            if (ocgeo_is_valid_latlng(result->geometry))
+                printf("\tGeometry: (%.7f,%.7f)\n", 
+                    result->geometry.lat, result->geometry.lng);
+
             if (ocgeo_is_valid_bounds(&result->bounds))
-            printf("\tBounding box: NE=(%.7f,%.7f) SW=(%.7f, %.7f)\n", 
-                result->bounds.northeast.lat, result->bounds.northeast.lng, 
-                result->bounds.southwest.lat, result->bounds.southwest.lng);
+                printf("\tBounding box: SW=(%.7f,%.7f) NE=(%.7f, %.7f)\n", 
+                    result->bounds.southwest.lat, result->bounds.southwest.lng,
+                    result->bounds.northeast.lat, result->bounds.northeast.lng);
         }
     }
     else {

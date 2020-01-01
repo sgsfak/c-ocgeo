@@ -4,6 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdbool.h>
 
 /* HTTP Status code used */
 #define OCGEO_CODE_OK (200)
@@ -41,7 +42,8 @@ typedef struct ocgeo_latlng {
 
 
 /*
- * A "bounding box" providing the SouthWest and NorthEast points:
+ * A "bounding box" providing the SouthWest (min longitude, min latitude)
+ * and NorthEast (max longitude, max latitude) points
  */
 typedef struct ocgeo_latlng_bounds {
 	ocgeo_latlng_t northeast;
@@ -57,6 +59,9 @@ typedef struct ocgeo_result {
 
 	/* "bounds", may be "null" (invalid): */
 	ocgeo_latlng_bounds_t bounds;
+
+	/* "geomentry" info */
+	ocgeo_latlng_t geometry;
 
 	/* "components": */
 	char* ISO_alpha2;
@@ -158,22 +163,27 @@ extern void ocgeo_response_cleanup(ocgeo_response_t* r);
 /* Some utils: */
 
 static inline
-int ocgeo_response_ok(ocgeo_response_t* response)
+bool ocgeo_response_ok(ocgeo_response_t* response)
 {
     if (response == NULL)
         return 0;
     return response->status.code == OCGEO_CODE_OK;
 }
 
+/*
+ * Return true if the given coordinates are "valid":
+ *  - Latitude should be between -90.0 and 90.0.
+ *  - Longitude should be between -180.0 and 180.0.
+*/
 static inline
-int ocgeo_is_valid_latlng(ocgeo_latlng_t coords)
+bool ocgeo_is_valid_latlng(ocgeo_latlng_t coords)
 {
 	return -90.0 <=coords.lat && coords.lat <= 90.0 &&
 		-180.0 <=coords.lng && coords.lng <= 180.0;
 }
 
 static inline
-int ocgeo_is_valid_bounds(ocgeo_latlng_bounds_t* bbox)
+bool ocgeo_is_valid_bounds(ocgeo_latlng_bounds_t* bbox)
 {
 	return bbox != NULL
 		&& ocgeo_is_valid_latlng(bbox->northeast)

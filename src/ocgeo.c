@@ -19,7 +19,7 @@
 
 char* ocgeo_version = OCGEO_VERSION;
 
-static ocgeo_latlng_t ocgeo_invalid_bounds = {.lat = -91.0, .lng=-181};
+static ocgeo_latlng_t ocgeo_invalid_point = {.lat = -91.0, .lng=-181};
 
 struct http_response {
     sds data;
@@ -91,9 +91,16 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
             parse_latlng(cJSON_GetObjectItem(bounds_js, "southwest"), &result->bounds.southwest);
         }
         else {
-            result->bounds.northeast = ocgeo_invalid_bounds;
-            result->bounds.southwest = ocgeo_invalid_bounds;
+            result->bounds.northeast = ocgeo_invalid_point;
+            result->bounds.southwest = ocgeo_invalid_point;
         }
+        cJSON* geom_js = cJSON_GetObjectItemCaseSensitive(result_js, "geometry");
+        // assert(geom_js);
+        if (geom_js)
+            parse_latlng(geom_js, &result->geometry);
+        else
+            result->geometry = ocgeo_invalid_point;
+        
 
         cJSON* comp_js = cJSON_GetObjectItemCaseSensitive(result_js, "components");
         assert(comp_js);
@@ -119,7 +126,7 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
 }
 
 static ocgeo_response_t*
-do_request(int is_fwd, const char* q, const char* api_key, 
+do_request(bool is_fwd, const char* q, const char* api_key, 
            ocgeo_params_t* params, ocgeo_response_t* response)
 {
     if (params == NULL) {
@@ -209,16 +216,16 @@ ocgeo_params_t ocgeo_default_params(void)
         .countrycode = NULL, .language = NULL,
         .no_annotations = 1
     };
-    params.proximity = ocgeo_invalid_bounds;
-    params.bounds.southwest = ocgeo_invalid_bounds;
-    params.bounds.northeast = ocgeo_invalid_bounds;
+    params.proximity = ocgeo_invalid_point;
+    params.bounds.southwest = ocgeo_invalid_point;
+    params.bounds.northeast = ocgeo_invalid_point;
     return params;
 }
 
 ocgeo_response_t* ocgeo_forward(const char* q, const char* api_key,
         ocgeo_params_t* params, ocgeo_response_t* response)
 {
-    return do_request(1, q, api_key, params, response);
+    return do_request(true, q, api_key, params, response);
 }
 
 ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key,
@@ -226,7 +233,7 @@ ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key,
 {
     sds q = sdsempty();
     q = sdscatprintf(q, "%.8F,%.8F", lat, lng);
-    ocgeo_response_t* r = do_request(0, q, api_key, params, response);
+    ocgeo_response_t* r = do_request(false, q, api_key, params, response);
     sdsfree(q);
     return r;
 }

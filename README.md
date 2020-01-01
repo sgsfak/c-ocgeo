@@ -24,7 +24,7 @@ You can see the `example.c` file for an example. The recommended use is as follo
 * Initialization of an `ocgeo_params` struct that contains various ([optional](https://opencagedata.com/api#forward-opt)) parameters for the request:
 
   ```C
-  ocgeo_params_t params = ocgeo_default_params_init();
+  ocgeo_params_t params = ocgeo_default_params();
   ```
 
 * The user can then overwrite the default parameters if s/he so wishes, e.g.
@@ -32,7 +32,7 @@ You can see the `example.c` file for an example. The recommended use is as follo
   ```C
   params.language = "hi"; // Hindi
   params.min_confidence = 5;
-  params.countrycode = "in" // India
+  params.countrycode = "in"; // India
   ```
 
 * Make a "forward" request providing the API key and your query:
@@ -82,7 +82,9 @@ You can see the `example.c` file for an example. The recommended use is as follo
 
   
 
+## Design
 
+The caller is responsible for 
 
 ## Miscellaneous
 
@@ -93,3 +95,4 @@ You can see the `example.c` file for an example. The recommended use is as follo
   ```
 
   where `<version>` comes from the Git commit tag or hash and `<curl-version>` is the version of the libcurl used.
+
