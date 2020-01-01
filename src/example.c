@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     params.language = "en";
     // params.min_confidence = 3;
     params.dbg_callback = debug;
+    params.no_annotations = true;
 
     /* Make a (forward) request to the API using the API key you have: */
     struct ocgeo_response response;

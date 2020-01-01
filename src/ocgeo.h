@@ -106,8 +106,8 @@ typedef struct ocgeo_params {
 	 * Normal parameters : 
 	 */
 
-	/* When set to 1 the API attempts to abbreviate and shorten the formatted string */
-	int abbrv; 
+	/* When true the API attempts to abbreviate and shorten the formatted string */
+	bool abbrv; 
 	
 	/* Used only for forward geocoding. This value will restrict the possible 
 	   results to a defined bounding box. */
@@ -131,18 +131,18 @@ typedef struct ocgeo_params {
 	/* An integer from 1-10. Only results with at least this confidence will be returned. */
 	int min_confidence;
 	
-	/* When set to 1 results will not contain annotations. */
-	int no_annotations;
+	/* When true results will not contain annotations. */
+	bool no_annotations;
 	
-	/* When set to 1 results will not be deduplicated. */
-	int no_dedupe;
+	/* When true results will not be deduplicated. */
+	bool no_dedupe;
 	
-	/* When set to 1 the query contents are not logged. Please use if you have 
-	concerns about privacy and want us to have no record of your query.*/
-	int no_record;
+	/* When true the query contents are not logged. Please use if you have 
+	   concerns about privacy and want us to have no record of your query.*/
+	bool no_record;
 
-	/* When set to 1 results are 'pretty' printed for easier reading. Useful for debugging. */
-	int pretty;
+	/* When true results are 'pretty' printed for easier reading. Useful for debugging. */
+	bool pretty;
 
 	/* Used only for forward geocoding. Provides the geocoder with a hint to 
 	   bias results in favour of those closer to the specified location. Please 
@@ -150,9 +150,9 @@ typedef struct ocgeo_params {
 	   use for ranking results. */
 	ocgeo_latlng_t proximity;
 
-	/* When set to 1 the behaviour of the geocoder is changed to 
+	/* When true the behaviour of the geocoder is changed to 
 	   attempt to match the nearest road (as opposed to address). */
-	int roadinfo;
+	bool roadinfo;
 } ocgeo_params_t;
 
 extern ocgeo_params_t ocgeo_default_params(void);
