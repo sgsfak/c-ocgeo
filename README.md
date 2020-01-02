@@ -6,7 +6,7 @@ This is a [C99](https://en.wikipedia.org/wiki/C99) library for accessing the [Op
 
 ## Building 
 
-We assume a POSIX compliant environment. We have tested it in MacOSX and OpenBSD. The sole prerequisite is the availability of [libcurl](https://curl.haxx.se/libcurl/) that is used for making the HTTP requests. It additionally uses two very nice C libraries that are contained in source form in the code repository:
+We assume a POSIX compliant environment. We have tested it in MacOSX, OpenBSD, and Linux. It should work in Windows too although not tested yet. The sole prerequisite is the availability of [libcurl](https://curl.haxx.se/libcurl/) that is used for making the HTTP requests. It additionally uses two very nice C libraries that are contained in source form in the code repository:
 
 * [cJSON](https://github.com/DaveGamble/cJSON), an ultralightweight JSON parser in ANSI C
 * [Simple Dynamic Strings (sds)](https://github.com/antirez/sds) (version 1.0.0) as a string library
