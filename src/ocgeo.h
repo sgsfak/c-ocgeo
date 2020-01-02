@@ -190,6 +190,40 @@ bool ocgeo_is_valid_bounds(ocgeo_latlng_bounds_t* bbox)
 	 	&& ocgeo_is_valid_latlng(bbox->southwest);
 }
 
+typedef struct {
+	int degrees;
+	int minutes;
+	float seconds;
+} ocgeo_degree_coords_t;
+
+/* Geographic coordinate conversion: traansform decimal coordinates
+ * to their "sexagesimal degree" representation, see
+ * https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
+ */
+static inline
+ocgeo_degree_coords_t ocgeo_decimal_coords_to_degrees(double decimal)
+{
+	bool neg = decimal < 0;
+	if (neg) 
+		decimal = -decimal;
+	int degrees =  (int) decimal;
+	ocgeo_degree_coords_t d;
+	d.degrees = neg ? -degrees : degrees;
+	d.minutes = (int) ((decimal - degrees) * 60);
+	d.seconds = 3600 * (decimal - degrees) - 60 * d.minutes;
+	return d;
+}
+
+/* The inverse transformation: from degrees, minutes, seconds
+ * to decimal coordinates
+ */
+static inline
+double ocgeo_degrees_to_decimal_coords(ocgeo_degree_coords_t d)
+{
+	int sign = d.degrees < 0 ? -1.0 : 1.0;
+	return d.degrees + sign * d.minutes / 60.0 + sign * d.seconds / 3600.0;
+}
+
 extern char* ocgeo_version;
 
 #ifdef __cplusplus

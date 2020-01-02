@@ -10,6 +10,8 @@ LDLIBS=-lcurl
 
 all: $(STATIC) example
 
+ocgeo.o: ocgeo.c ocgeo.h
+
 $(STATIC): $(OBJ)
 	$(AR) $(ARFLAGS) $@ $^
 
