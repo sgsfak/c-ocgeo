@@ -134,6 +134,10 @@ do_request(bool is_fwd, const char* q, const char* api_key,
         return do_request(is_fwd, q, api_key, &params, response);
     }
 
+    /* Make sure that we have a proper response: */
+    if (response == NULL)
+        return NULL;
+
     CURL *curl = curl_easy_init();
     if (curl == NULL) {
         return NULL;
@@ -174,7 +178,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
             params->bounds.southwest.lng, params->bounds.southwest.lat, 
             params->bounds.northeast.lng, params->bounds.northeast.lat);
 
-    fprintf(stderr, "URL=%s\n", url);
+    // fprintf(stderr, "URL=%s\n", url);
 
     struct http_response r; r.data = sdsempty();
     sds user_agent = sdsempty();
