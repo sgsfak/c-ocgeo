@@ -84,7 +84,9 @@ You can see the `example.c` file for an example. The recommended use is as follo
 
 ## Design
 
-The caller is responsible for 
+* A decimal latitude or longitude is represented as `double` This is to ensure that more [precision](https://en.wikipedia.org/wiki/Decimal_degrees#Precision) is possible in specifying geographic coordinates.
+* The caller is responsible for the management of the memory. The design of the `ocgeo_params_t` parameters struct permits the declaration of corresponding variables in the stack or the heap. The library cannot shun the dynamic allocation for internal fields of the response (`ocgeo_response_t`) structure and thus the caller should always call `ocgeo_response_cleanup` after any request.
+* Some fields of the response (`ocgeo_response_t`) structure are optional. The caller should always check for NULL values in the pointers therein.
 
 ## Miscellaneous
 
