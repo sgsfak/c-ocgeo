@@ -41,10 +41,10 @@ int main(int argc, char* argv[])
                 printf("\tGeometry: (%.7f,%.7f)\n", 
                     result->geometry.lat, result->geometry.lng);
 
-            if (ocgeo_is_valid_bounds(&result->bounds))
+            if (result->bounds)
                 printf("\tBounding box: SW=(%.7f,%.7f) NE=(%.7f, %.7f)\n", 
-                    result->bounds.southwest.lat, result->bounds.southwest.lng,
-                    result->bounds.northeast.lat, result->bounds.northeast.lng);
+                    result->bounds->southwest.lat, result->bounds->southwest.lng,
+                    result->bounds->northeast.lat, result->bounds->northeast.lng);
         }
     }
     else {

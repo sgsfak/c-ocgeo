@@ -40,6 +40,14 @@ typedef struct ocgeo_latlng {
 	double lng;
 } ocgeo_latlng_t;
 
+/* Degrees, minutes, seconds (DMS) coordinates, see
+ * https://en.wikipedia.org/wiki/Decimal_degrees
+ */
+typedef struct ocgeo_dms {
+	int degrees;
+	int minutes;
+	float seconds;
+} ocgeo_dms_t;
 
 /*
  * A "bounding box" providing the SouthWest (min longitude, min latitude)
@@ -50,6 +58,30 @@ typedef struct ocgeo_latlng_bounds {
 	ocgeo_latlng_t southwest;
 } ocgeo_latlng_bounds_t;
 
+typedef struct {
+	char* name;
+	char* short_name;
+	char* offset_string;
+	int offset_sec;
+	bool now_in_dst;
+} ocgeo_ann_timezone_t;
+
+typedef struct {
+	char* drive_on;
+	char* speed_in;
+	char* road;
+	char* road_type;
+	char* surface;
+} ocgeo_ann_roadinfo_t;
+
+typedef struct {
+	char* name;
+	char* iso_code;
+	char* symbol;
+	char* decimal_mark;
+	char* thousands_separator;
+} ocgeo_ann_currency_t;
+
 /*
  * A matching result in the API's response. 
  */
@@ -58,7 +90,7 @@ typedef struct ocgeo_result {
 	char* formatted;
 
 	/* "bounds", may be "null" (invalid): */
-	ocgeo_latlng_bounds_t bounds;
+	ocgeo_latlng_bounds_t* bounds;
 
 	/* "geomentry" info */
 	ocgeo_latlng_t geometry;
@@ -81,6 +113,19 @@ typedef struct ocgeo_result {
 	char* state;
 	char* state_district;
 	char* suburb;
+
+	/* 
+	 * Annotations, each may be NULL:
+	 */
+
+	/* timezone annotation */
+	ocgeo_ann_timezone_t* timezone;
+	/* roadinfo annotation */
+	ocgeo_ann_roadinfo_t* roadinfo;
+	/* currency info */
+	ocgeo_ann_currency_t* currency;
+
+	void* internal;
 } ocgeo_result_t;
 
 typedef struct ocgeo_response {
@@ -141,9 +186,6 @@ typedef struct ocgeo_params {
 	   concerns about privacy and want us to have no record of your query.*/
 	bool no_record;
 
-	/* When true results are 'pretty' printed for easier reading. Useful for debugging. */
-	bool pretty;
-
 	/* Used only for forward geocoding. Provides the geocoder with a hint to 
 	   bias results in favour of those closer to the specified location. Please 
 	   note though, this is just one of many factors in the internal scoring we 
@@ -190,24 +232,18 @@ bool ocgeo_is_valid_bounds(ocgeo_latlng_bounds_t* bbox)
 	 	&& ocgeo_is_valid_latlng(bbox->southwest);
 }
 
-typedef struct {
-	int degrees;
-	int minutes;
-	float seconds;
-} ocgeo_degree_coords_t;
-
 /* Geographic coordinate conversion: traansform decimal coordinates
  * to their "sexagesimal degree" representation, see
  * https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
  */
 static inline
-ocgeo_degree_coords_t ocgeo_decimal_coords_to_degrees(double decimal)
+ocgeo_dms_t ocgeo_decimal_coords_to_degrees(double decimal)
 {
 	bool neg = decimal < 0;
 	if (neg) 
 		decimal = -decimal;
 	int degrees =  (int) decimal;
-	ocgeo_degree_coords_t d;
+	ocgeo_dms_t d;
 	d.degrees = neg ? -degrees : degrees;
 	d.minutes = (int) ((decimal - degrees) * 60);
 	d.seconds = 3600 * (decimal - degrees) - 60 * d.minutes;
@@ -218,7 +254,7 @@ ocgeo_degree_coords_t ocgeo_decimal_coords_to_degrees(double decimal)
  * to decimal coordinates
  */
 static inline
-double ocgeo_degrees_to_decimal_coords(ocgeo_degree_coords_t d)
+double ocgeo_degrees_to_decimal_coords(ocgeo_dms_t d)
 {
 	int sign = d.degrees < 0 ? -1.0 : 1.0;
 	return d.degrees + sign * d.minutes / 60.0 + sign * d.seconds / 3600.0;

@@ -81,19 +81,22 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
     int k = 0;
     for (result_js = obj->child; result_js!= NULL; result_js = result_js->next, k++) {
         ocgeo_result_t* result = response->results + k;
+        result->bounds = NULL;
+        result->timezone = NULL;
+        result->roadinfo = NULL;
+        result->internal = result_js;
+
         result->confidence = JSON_OBJ_GET_INT(result_js,"confidence");
         result->formatted = JSON_OBJ_GET_STR(result_js,"formatted");
 
         cJSON* bounds_js = cJSON_GetObjectItemCaseSensitive(result_js, "bounds");
         // assert(bounds_js);
         if (bounds_js) {
-            parse_latlng(cJSON_GetObjectItem(bounds_js, "northeast"), &result->bounds.northeast);
-            parse_latlng(cJSON_GetObjectItem(bounds_js, "southwest"), &result->bounds.southwest);
+            result->bounds = calloc(1, sizeof(ocgeo_latlng_bounds_t));
+            parse_latlng(cJSON_GetObjectItem(bounds_js, "northeast"), &result->bounds->northeast);
+            parse_latlng(cJSON_GetObjectItem(bounds_js, "southwest"), &result->bounds->southwest);
         }
-        else {
-            result->bounds.northeast = ocgeo_invalid_point;
-            result->bounds.southwest = ocgeo_invalid_point;
-        }
+
         cJSON* geom_js = cJSON_GetObjectItemCaseSensitive(result_js, "geometry");
         // assert(geom_js);
         if (geom_js)
@@ -121,6 +124,41 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
         result->state = JSON_OBJ_GET_STR(comp_js, "state");
         result->state_district = JSON_OBJ_GET_STR(comp_js, "state_district");
         result->suburb = JSON_OBJ_GET_STR(comp_js, "suburb");
+
+        /* Parse annotations, if exist */
+        cJSON* ann_js = cJSON_GetObjectItemCaseSensitive(result_js, "annotations");
+        if (ann_js) {
+            cJSON* tm_ann = cJSON_GetObjectItemCaseSensitive(ann_js, "timezone");
+            if (tm_ann) {
+                ocgeo_ann_timezone_t* timezone = calloc(1, sizeof(ocgeo_ann_timezone_t));
+                timezone->name = JSON_OBJ_GET_STR(tm_ann, "name");
+                timezone->short_name = JSON_OBJ_GET_STR(tm_ann, "short_name");
+                timezone->offset_string = JSON_OBJ_GET_STR(tm_ann, "offset_string");
+                timezone->offset_sec = JSON_OBJ_GET_INT(tm_ann,"offset_sec");
+                timezone->now_in_dst = JSON_OBJ_GET_INT(tm_ann,"now_in_dst") == 1;
+                result->timezone = timezone;
+            }
+            cJSON* ri_ann = cJSON_GetObjectItemCaseSensitive(ann_js, "roadinfo");
+            if (ri_ann) {
+                ocgeo_ann_roadinfo_t* roadinfo = calloc(1, sizeof(ocgeo_ann_roadinfo_t));
+                roadinfo->drive_on = JSON_OBJ_GET_STR(ri_ann, "drive_on");
+                roadinfo->speed_in = JSON_OBJ_GET_STR(ri_ann, "speed_in");
+                roadinfo->road = JSON_OBJ_GET_STR(ri_ann, "road");
+                roadinfo->road_type = JSON_OBJ_GET_STR(ri_ann, "road_type");
+                roadinfo->surface = JSON_OBJ_GET_STR(ri_ann, "surface");
+                result->roadinfo = roadinfo;
+            }
+            cJSON* cur_ann = cJSON_GetObjectItemCaseSensitive(ann_js, "currency");
+            if (cur_ann) {
+                ocgeo_ann_currency_t* currency = calloc(1, sizeof(ocgeo_ann_currency_t));
+                currency->name = JSON_OBJ_GET_STR(cur_ann, "name");
+                currency->iso_code = JSON_OBJ_GET_STR(cur_ann, "iso_code");
+                currency->symbol = JSON_OBJ_GET_STR(cur_ann, "symbol");
+                currency->decimal_mark = JSON_OBJ_GET_STR(cur_ann, "decimal_mark");
+                currency->thousands_separator = JSON_OBJ_GET_STR(cur_ann, "thousands_separator");
+                result->currency = currency;
+            }
+        }
     }
     return 0;
 }
@@ -158,8 +196,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
         url = sdscatprintf(url, "&limit=%d", params->limit);
     if (params->min_confidence)
         url = sdscatprintf(url, "&min_confidence=%d", params->min_confidence);
-    if (params->no_annotations)
-        url = sdscat(url, "&no_annotations=1");
+    url = sdscatprintf(url, "&no_annotations=%d", params->no_annotations ? 1 : 0);
     if (params->no_dedupe)
         url = sdscat(url, "&no_dedupe=1");
     if (params->no_record)
@@ -178,7 +215,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
             params->bounds.southwest.lng, params->bounds.southwest.lat, 
             params->bounds.northeast.lng, params->bounds.northeast.lat);
 
-    // fprintf(stderr, "URL=%s\n", url);
+    fprintf(stderr, "URL=%s\n", url);
 
     struct http_response r; r.data = sdsempty();
     sds user_agent = sdsempty();
@@ -218,7 +255,7 @@ ocgeo_params_t ocgeo_default_params(void)
     ocgeo_params_t params = {
         .dbg_callback = NULL, .callback_data = NULL,
         .countrycode = NULL, .language = NULL,
-        .no_annotations = 1
+        .no_annotations = false
     };
     params.proximity = ocgeo_invalid_point;
     params.bounds.southwest = ocgeo_invalid_point;
@@ -242,10 +279,24 @@ ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key,
     return r;
 }
 
+static inline
+void ocgeo_result_cleanup(ocgeo_result_t* r)
+{
+    free(r->bounds);
+    free(r->timezone);
+    free(r->roadinfo);
+    free(r->currency);
+}
+
 void ocgeo_response_cleanup(ocgeo_response_t* r)
 {
     if (r == NULL)
         return;
+
+    for (int i=0; i<r->total_results; ++i) {
+        ocgeo_result_cleanup(r->results + i);
+    }
+    r->total_results = 0;
     free(r->results);
     r->results = NULL;
     cJSON_Delete(r->internal);
