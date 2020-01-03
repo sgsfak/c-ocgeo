@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
             bool ok;
             const char* curr = ocgeo_response_get_str(result, "annotations.currency.alternate_symbols.0", &ok);
             if (ok) {
-                printf("\tAlt Currency:%s\n", curr);
+                printf("\t(First) Alt Currency:%s\n", curr);
             }
         }
     }

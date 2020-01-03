@@ -256,7 +256,7 @@ void ocgeo_response_cleanup(ocgeo_response_t* r);
  * Examples of paths:
  *  - "annotations.DMS.lat": get the "lat" value, in the "DMS" field of
  *               the "annotation" field in response
- *  - "annotations.currency.alternate_symbols.1": get the value at index 1, in the 
+ *  - "annotations.currency.alternate_symbols.1": get the value at index 1 (2nd elem) 
  *                in the "alternate_symbols" field (which is a JSON array) of the
  *                "currency" annotation
  */

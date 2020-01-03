@@ -122,7 +122,7 @@ walk/traverse the JSON response:
  * Examples of paths:
  *  - "annotations.DMS.lat": get the "lat" value, in the "DMS" field of
  *               the "annotation" field in response
- *  - "annotations.currency.alternate_symbols.1": get the value at index 1, in the 
+ *  - "annotations.currency.alternate_symbols.1": get the value at index 1 (2nd elem) 
  *                in the "alternate_symbols" field (which is a JSON array) of the
  *                "currency" annotation
  */
@@ -143,8 +143,19 @@ Again, please have a look at `example.c` and `tests.c` files for examples.
 ## Design
 
 * A decimal latitude or longitude is represented as `double` This is to ensure that more [precision](https://en.wikipedia.org/wiki/Decimal_degrees#Precision) is possible in specifying geographic coordinates.
+
 * The caller is responsible for the management of the memory. The design of the `ocgeo_params_t` parameters struct permits the declaration of corresponding variables in the stack or the heap. The library cannot shun the dynamic allocation for internal fields of the response (`ocgeo_response_t`) structure and thus the caller should always call `ocgeo_response_cleanup` after any request.
+
 * Some fields of the response (`ocgeo_response_t`) structure are optional. The caller should always check for NULL values in the pointers therein. 
+
+* We try to parse the JSON response into "typed" C `struct`s but since the OpenCageData Geocoder API is aggregating data from [various sources](https://opencagedata.com/credits) that can frequently change their database there's high probability that the returned data structures are incomplete (e.g. new annotations maybe added in the future or new fields.). The path ("advanced") API is a means to cover these cases. Another option is to use the `void* internal` field of the `ocgeo_result_t`, which is actually a pointer to `cJSON` data, and the cJSON API to get whatever information is not available directly by this library.
+
+* The API is by design synchronous. Making it async is possible, using [libcurl's multi interface](https://curl.haxx.se/libcurl/c/libcurl-multi.html), but:
+
+  	1. This would complicate the API
+   	2. It would make easier to exceed the request per sec limit of the user's plan, unless we provide an upper limit on the concurrent requests which will complicate the API even more :-)
+
+  Of course it's an interesting exercise, please chime in if it's important for you :-)
 
 ## Miscellaneous
 
