@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     params.language = "en";
     // params.min_confidence = 3;
     params.dbg_callback = debug;
-    params.no_annotations = true;
+    params.no_annotations = false;
 
     /* Make a (forward) request to the API using the API key you have: */
     struct ocgeo_response response;
@@ -46,6 +46,11 @@ int main(int argc, char* argv[])
                 printf("\tBounding box: SW=(%.7f,%.7f) NE=(%.7f, %.7f)\n", 
                     result->bounds->southwest.lat, result->bounds->southwest.lng,
                     result->bounds->northeast.lat, result->bounds->northeast.lng);
+            bool ok;
+            const char* curr = ocgeo_response_get_str(result, "annotations.currency.alternate_symbols.0", &ok);
+            if (ok) {
+                printf("\tAlt Currency:%s\n", curr);
+            }
         }
     }
     else {

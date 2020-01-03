@@ -244,6 +244,34 @@ ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key, ocg
 void ocgeo_response_cleanup(ocgeo_response_t* r);
 
 /*
+ * "Advanced" JSON traversing API!
+ * This is useful for accessing the fields of the returned JSON document
+ * in a generic way, since many of the fields may be missing or new fields
+ * may be added in the future.
+ * 
+ * The caller provides a "path" string that contains a series of fields
+ * separated by dots ('.') to access any internal field value. Positive
+ * integer path segments are interpreted as indices in JSON arrays.
+ *
+ * Examples of paths:
+ *  - "annotations.DMS.lat": get the "lat" value, in the "DMS" field of
+ *               the "annotation" field in response
+ *  - "annotations.currency.alternate_symbols.1": get the value at index 1, in the 
+ *                in the "alternate_symbols" field (which is a JSON array) of the
+ *                "currency" annotation
+ */
+/* Return as string value. The caller should not alter the string, or free the returned
+   pointer, as it points to internally managed memory. If successful (i.e. the field
+   exists and has no 'null' value), `ok` will set to true */
+const char* ocgeo_response_get_str(ocgeo_result_t* r, const char* path, bool* ok);
+/* Return as int value. If successful (i.e. the field exists and has no 'null' value),
+  `ok` will set to true */
+int ocgeo_response_get_int(ocgeo_result_t* r, const char* path, bool* ok);
+/* Return as double value. If successful (i.e. the field exists and has no 'null' value),
+  `ok` will set to true */
+double ocgeo_response_get_dbl(ocgeo_result_t* r, const char* path, bool* ok);
+
+/*
  * Some utils:
  */
 

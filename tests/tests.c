@@ -32,6 +32,7 @@ d_eq_scale(double a, double b, int p)
 #define d_eq_2(a,b) d_eq_scale(a,b,100)
 #define d_eq_5(a,b) d_eq_scale(a,b,10000)
 #define d_eq_6(a,b) d_eq_scale(a,b,100000)
+#define d_eq_7(a,b) d_eq_scale(a,b,1000000)
 
 #define TEST_DEC_TO_DEG(dec, d, m, s) \
     dd = ocgeo_decimal_coords_to_degrees(dec); \
@@ -79,6 +80,18 @@ int main(int argc, char* argv[])
     TEST("Testing road info annotation", result->roadinfo != NULL &&
         strcmp(result->roadinfo->speed_in, "km/h")==0 &&
         strcmp(result->roadinfo->drive_on, "right")==0);
+    
+    bool ok;
+    const char* lat = ocgeo_response_get_str(result, "annotations.DMS.lat", &ok);
+    TEST("Testing adv API, getting DMS lat", ok);
+    int callingCode = ocgeo_response_get_int(result, "annotations.callingcode", &ok);
+    TEST("Testing adv API, getting calling code", ok && callingCode == 49);
+    printf("\t\tDMS lat = \"%s\", calling code=%d\n", lat, callingCode);
+
+    TEST("Testing adv API, getting bounds", 
+        d_eq_7(ocgeo_response_get_dbl(result, "bounds.northeast.lat", &ok), 51.9528202));
+    TEST("Testing adv API, getting nonexistent string field", 
+        ocgeo_response_get_str(result, "annotations.NON-EXISTENT", &ok) == NULL && !ok);
 
     ocgeo_response_cleanup(&response);
 

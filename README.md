@@ -80,13 +80,71 @@ You can see the `example.c` file for an example. The recommended use is as follo
   ocgeo_response_cleanup(&response);
   ```
 
-  
+The basic API offered by this library is therefore the following functions:
+
+```C
+/* Create a parameters "object" with default values.
+ * The default values for all the fields are 0 or NULL (for the pointer fields)
+ * and "invalid" latitude/longitude values for the ones (such as `proximity`)
+ * that correspond to coordinates.
+ */
+ocgeo_params_t ocgeo_default_params(void);
+
+/* Make a forward request i.e. find information about an address, place etc.
+   You can supply NULL as `params` and the default values will be used
+*/
+ocgeo_response_t* ocgeo_forward(const char* query, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+
+/* Make a reverse request i.e. find what exists in the given latitude and longtitude.
+   You can supply NULL as `params` and the default values will be used
+*/
+ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+
+/* Free the memory used by the response of a forward or reverse call */
+void ocgeo_response_cleanup(ocgeo_response_t* r);
+```
+
+Since some of the fields are optional and in order to be more "future-proof", there are 
+a couple of additional functions to support a more generic API that allows to dynamically
+walk/traverse the JSON response:
+
+```C
+/*
+ * "Advanced" JSON traversing API!
+ * This is useful for accessing the fields of the returned JSON document
+ * in a generic way, since many of the fields may be missing or new fields
+ * may be added in the future.
+ * 
+ * The caller provides a "path" string that contains a series of fields
+ * separated by dots ('.') to access any internal field value. Positive
+ * integer path segments are interpreted as indices in JSON arrays.
+ *
+ * Examples of paths:
+ *  - "annotations.DMS.lat": get the "lat" value, in the "DMS" field of
+ *               the "annotation" field in response
+ *  - "annotations.currency.alternate_symbols.1": get the value at index 1, in the 
+ *                in the "alternate_symbols" field (which is a JSON array) of the
+ *                "currency" annotation
+ */
+/* Return as string value. The caller should not alter the string, or free the returned
+   pointer, as it points to internally managed memory. If successful (i.e. the field
+   exists and has no 'null' value), `ok` will set to true */
+const char* ocgeo_response_get_str(ocgeo_result_t* r, const char* path, bool* ok);
+/* Return as int value. If successful (i.e. the field exists and has no 'null' value),
+  `ok` will set to true */
+int ocgeo_response_get_int(ocgeo_result_t* r, const char* path, bool* ok);
+/* Return as double value. If successful (i.e. the field exists and has no 'null' value),
+  `ok` will set to true */
+double ocgeo_response_get_dbl(ocgeo_result_t* r, const char* path, bool* ok);
+```
+Again, please have a look at `example.c` and `tests.c` files for examples.
+
 
 ## Design
 
 * A decimal latitude or longitude is represented as `double` This is to ensure that more [precision](https://en.wikipedia.org/wiki/Decimal_degrees#Precision) is possible in specifying geographic coordinates.
 * The caller is responsible for the management of the memory. The design of the `ocgeo_params_t` parameters struct permits the declaration of corresponding variables in the stack or the heap. The library cannot shun the dynamic allocation for internal fields of the response (`ocgeo_response_t`) structure and thus the caller should always call `ocgeo_response_cleanup` after any request.
-* Some fields of the response (`ocgeo_response_t`) structure are optional. The caller should always check for NULL values in the pointers therein.
+* Some fields of the response (`ocgeo_response_t`) structure are optional. The caller should always check for NULL values in the pointers therein. 
 
 ## Miscellaneous
 

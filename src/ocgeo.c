@@ -324,3 +324,86 @@ void ocgeo_response_cleanup(ocgeo_response_t* r)
     cJSON_Delete(r->internal);
     r->internal = NULL;
 }
+
+static
+int str_to_maybe_int(sds s)
+{
+    int k = 0;
+    int len = sdslen(s);
+    for (int i=0; i<len; ++i) {
+        char c = s[i];
+        k += 10*k;
+        switch(c) {
+        case '0': break;
+        case '1': k += 1; break;
+        case '2': k += 2; break;
+        case '3': k += 3; break;
+        case '4': k += 4; break;
+        case '5': k += 5; break;
+        case '6': k += 6; break;
+        case '7': k += 7; break;
+        case '8': k += 8; break;
+        case '9': k += 9; break;
+        default:
+            return -1;
+        }
+    }
+    return k;
+}
+
+static
+cJSON* get_json_field(cJSON* parent, const char* path)
+{
+    static const char* sep = ".";
+
+    if (parent == NULL)
+        return NULL;
+    int n = 0;
+    sds* fields = sdssplitlen(path, strlen(path), sep, 1, &n);
+    if (fields == NULL)
+        return NULL;
+
+    cJSON* current = parent;
+    for (int k = 0; k<n && current != NULL; ++k) {
+        int index = str_to_maybe_int(fields[k]);
+        if (index >= 0)
+            current = cJSON_GetArrayItem(current, index);
+        else
+            current = cJSON_GetObjectItemCaseSensitive(current, fields[k]);
+    }
+    sdsfreesplitres(fields, n);
+    return current;
+}
+
+const char* ocgeo_response_get_str(ocgeo_result_t* r, const char* path, bool* ok)
+{
+    cJSON* js = get_json_field(r->internal, path);
+    if (js == NULL || cJSON_IsNull(js) || !cJSON_IsString(js)) {
+        *ok = false;
+        return NULL;
+    }
+    *ok = true;
+    return js->valuestring;
+}
+
+int ocgeo_response_get_int(ocgeo_result_t* r, const char* path, bool* ok)
+{
+    cJSON* js = get_json_field(r->internal, path);
+    if (js == NULL || cJSON_IsNull(js) || !cJSON_IsNumber(js)) {
+        *ok = false;
+        return 0;
+    }
+    *ok = true;
+    return js->valueint;
+}
+
+double ocgeo_response_get_dbl(ocgeo_result_t* r, const char* path, bool* ok)
+{
+    cJSON* js = get_json_field(r->internal, path);
+    if (js == NULL || cJSON_IsNull(js) || !cJSON_IsNumber(js)) {
+        *ok = false;
+        return 0.0;
+    }
+    *ok = true;
+    return js->valuedouble;
+}
