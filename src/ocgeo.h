@@ -1,3 +1,25 @@
+/*
+  Copyright (c) 2019 Stelios Sfakianakis
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+*/
+
 #ifndef OC_GEOCODE_H
 #define OC_GEOCODE_H
 
@@ -197,12 +219,33 @@ typedef struct ocgeo_params {
 	bool roadinfo;
 } ocgeo_params_t;
 
-extern ocgeo_params_t ocgeo_default_params(void);
-extern ocgeo_response_t* ocgeo_forward(const char* query, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
-extern ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
-extern void ocgeo_response_cleanup(ocgeo_response_t* r);
+/*
+ * The C API :
+ */
 
-/* Some utils: */
+/* Create a parameters "object" with default values.
+ * The default values for all the fields are 0 or NULL (for the pointer fields)
+ * and "invalid" latitude/longitude values for the ones (such as `proximity`)
+ * that correspond to coordinates.
+ */
+ocgeo_params_t ocgeo_default_params(void);
+
+/* Make a forward request i.e. find information about an address, place etc.
+   You can supply NULL as `params` and the default values will be used
+*/
+ocgeo_response_t* ocgeo_forward(const char* query, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+
+/* Make a reverse request i.e. find what exists in the given latitude and longtitude.
+   You can supply NULL as `params` and the default values will be used
+*/
+ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+
+/* Free the memory used by the response of a forward or reverse call */
+void ocgeo_response_cleanup(ocgeo_response_t* r);
+
+/*
+ * Some utils:
+ */
 
 static inline
 bool ocgeo_response_ok(ocgeo_response_t* response)

@@ -9,6 +9,7 @@ void debug(const char* json, void* data)
 
 int main(int argc, char* argv[])
 {
+    printf("Using version '%s' of the ocgeo lib.\n", ocgeo_version);
 
     if (argc <= 2) {
         fprintf(stderr, "Usage: example <api-key> <query>\n");

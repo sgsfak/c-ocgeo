@@ -30,8 +30,8 @@ d_eq_scale(double a, double b, int p)
 }
 #define d_eq_1(a,b) d_eq_scale(a,b,10)
 #define d_eq_2(a,b) d_eq_scale(a,b,100)
-#define d_eq_3(a,b) d_eq_scale(a,b,1000)
 #define d_eq_5(a,b) d_eq_scale(a,b,10000)
+#define d_eq_6(a,b) d_eq_scale(a,b,100000)
 
 #define TEST_DEC_TO_DEG(dec, d, m, s) \
     dd = ocgeo_decimal_coords_to_degrees(dec); \
@@ -41,7 +41,7 @@ d_eq_scale(double a, double b, int p)
 #define TEST_DEG_TO_DEC(x) \
     dd = ocgeo_decimal_coords_to_degrees(x); \
     TEST("mapping " #x " to degrees and back", \
-        d_eq_5(x,ocgeo_degrees_to_decimal_coords(dd)))
+        d_eq_6(x,ocgeo_degrees_to_decimal_coords(dd)))
 
 static int count_pass = 0;
 static int count_fail = 0;
