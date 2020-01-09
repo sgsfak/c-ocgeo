@@ -34,16 +34,22 @@ int main(int argc, char* argv[])
     if (ocgeo_response_ok(&response)) {
         /* Retrieve the response information: */
         printf("Got %d results:\n", response.total_results);
-        for (int i=0; i<response.total_results; ++i) {
-            struct ocgeo_result* result = response.results + i;
-            printf("%2d. %s (type: %s, conf:%d)\n", i+1, 
+        int i=1;
+        ocgeo_result_t* result;
+        foreach_ocgeo_result(result, &response) {
+            printf("%2d. %s (type: %s, conf:%d)\n", i,
                 result->formatted, result->type, result->confidence);
+            ++i;
+            printf("\tGeohash=%s, what3words=%s, calling code=%d\n",
+                result->geohash != NULL ? result->geohash : "",
+                result->what3words != NULL ? result->what3words : "",
+                result->callingcode);
             if (ocgeo_is_valid_latlng(result->geometry))
                 printf("\tGeometry: (%.7f,%.7f)\n", 
                     result->geometry.lat, result->geometry.lng);
 
             if (result->bounds)
-                printf("\tBounding box: SW=(%.7f,%.7f) NE=(%.7f, %.7f)\n", 
+                printf("\tBounding box: SW(lat,lon)=(%.7f,%.7f) NE(lat,lon)=(%.7f, %.7f)\n", 
                     result->bounds->southwest.lat, result->bounds->southwest.lng,
                     result->bounds->northeast.lat, result->bounds->northeast.lng);
             bool ok;

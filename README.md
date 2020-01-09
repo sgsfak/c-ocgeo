@@ -67,9 +67,9 @@ You can see the `example.c` file for an example. The recommended use is as follo
 
   ```C
   printf("Got %d results:\n", response.total_results);
-  for (int i=0; i<response.total_results; ++i) {
-     ocgeo_result_t* result = response.results + i;
-     printf("%2d. %s (type: %s, conf:%d)\n", i+1, 
+  ocgeo_result_t* result;
+  foreach_ocgeo_result(result, &response) {
+     printf("%s (type: %s, conf:%d)\n",
          result->formatted, result->type, result->confidence);
   }
   ```

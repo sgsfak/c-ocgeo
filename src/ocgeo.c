@@ -39,6 +39,13 @@
 #define OCGEO_VERSION 0.1.0
 #endif
 
+
+#ifdef NDEBUG
+#define log(...)
+#else
+#define log(...) fprintf (stderr, __VA_ARGS__)
+#endif
+
 char* ocgeo_version = OCGEO_VERSION;
 
 static ocgeo_latlng_t ocgeo_invalid_point = {.lat = -91.0, .lng=-181};
@@ -95,18 +102,21 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
         return 0;
     }
 
-    response->results = calloc(response->total_results, sizeof(ocgeo_result_t));
+    response->results = malloc(response->total_results * sizeof(ocgeo_result_t));
     obj = cJSON_GetObjectItemCaseSensitive(json, "results");
     assert(obj);
 
     cJSON* result_js;
     int k = 0;
+    ocgeo_result_t proto = {0};
+    ocgeo_result_t** pprev = &response->results;
     for (result_js = obj->child; result_js!= NULL; result_js = result_js->next, k++) {
         ocgeo_result_t* result = response->results + k;
-        result->bounds = NULL;
-        result->timezone = NULL;
-        result->roadinfo = NULL;
+        *result = proto; /* initialize with 0/NULL values */
         result->internal = result_js;
+        /* keep them in a list for easy traversal */
+        (*pprev) = result;
+        pprev = &result->next;
 
         result->confidence = JSON_OBJ_GET_INT(result_js,"confidence");
         result->formatted = JSON_OBJ_GET_STR(result_js,"formatted");
@@ -150,6 +160,8 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
         /* Parse annotations, if exist */
         cJSON* ann_js = cJSON_GetObjectItemCaseSensitive(result_js, "annotations");
         if (ann_js) {
+            result->callingcode = JSON_OBJ_GET_INT(ann_js,"callingcode");
+            
             cJSON* tm_ann = cJSON_GetObjectItemCaseSensitive(ann_js, "timezone");
             if (tm_ann) {
                 ocgeo_ann_timezone_t* timezone = calloc(1, sizeof(ocgeo_ann_timezone_t));
@@ -179,6 +191,11 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
                 currency->decimal_mark = JSON_OBJ_GET_STR(cur_ann, "decimal_mark");
                 currency->thousands_separator = JSON_OBJ_GET_STR(cur_ann, "thousands_separator");
                 result->currency = currency;
+            }
+            result->geohash = JSON_OBJ_GET_STR(ann_js, "geohash");
+            cJSON* w3w_ann = cJSON_GetObjectItemCaseSensitive(ann_js, "what3words");
+            if (w3w_ann) {
+                result->what3words = JSON_OBJ_GET_STR(w3w_ann, "words");
             }
         }
     }
@@ -237,7 +254,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
             params->bounds.southwest.lng, params->bounds.southwest.lat, 
             params->bounds.northeast.lng, params->bounds.northeast.lat);
 
-    fprintf(stderr, "URL=%s\n", url);
+    log("URL=%s\n", url);
 
     struct http_response r; r.data = sdsempty();
     sds user_agent = sdsempty();
@@ -274,11 +291,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
 ocgeo_params_t ocgeo_default_params(void)
 {
 
-    ocgeo_params_t params = {
-        .dbg_callback = NULL, .callback_data = NULL,
-        .countrycode = NULL, .language = NULL,
-        .no_annotations = false
-    };
+    ocgeo_params_t params = {0};
     params.proximity = ocgeo_invalid_point;
     params.bounds.southwest = ocgeo_invalid_point;
     params.bounds.northeast = ocgeo_invalid_point;
@@ -301,22 +314,17 @@ ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key,
     return r;
 }
 
-static inline
-void ocgeo_result_cleanup(ocgeo_result_t* r)
-{
-    free(r->bounds);
-    free(r->timezone);
-    free(r->roadinfo);
-    free(r->currency);
-}
-
 void ocgeo_response_cleanup(ocgeo_response_t* r)
 {
     if (r == NULL)
         return;
 
-    for (int i=0; i<r->total_results; ++i) {
-        ocgeo_result_cleanup(r->results + i);
+    ocgeo_result_t* result;
+    foreach_ocgeo_result(result, r) {
+        free(result->bounds);
+        free(result->timezone);
+        free(result->roadinfo);
+        free(result->currency);
     }
     r->total_results = 0;
     free(r->results);

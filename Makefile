@@ -19,10 +19,10 @@ example: src/example.c $(LIB)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 ocgeo_tests: tests/tests.c $(LIB)
-	$(CC) $(CFLAGS) -Isrc $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS) -Isrc $(LDFLAGS) -o $@ tests/tests.c $(LIB) $(LDLIBS)
 
 test: ocgeo_tests
-	@./$<
+	@./$^
 
 clean:
 	rm -f example ocgeo_tests $(OBJ) *.a

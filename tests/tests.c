@@ -80,6 +80,8 @@ int main(int argc, char* argv[])
     TEST("Testing road info annotation", result->roadinfo != NULL &&
         strcmp(result->roadinfo->speed_in, "km/h")==0 &&
         strcmp(result->roadinfo->drive_on, "right")==0);
+    TEST("Testing 'what3words' annotation", result->what3words != NULL);
+    TEST("Testing 'geohash' annotation", result->geohash != NULL);
     
     bool ok;
     const char* lat = ocgeo_response_get_str(result, "annotations.DMS.lat", &ok);

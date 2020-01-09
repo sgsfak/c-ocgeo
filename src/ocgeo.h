@@ -108,7 +108,6 @@ typedef struct {
  * A matching result in the API's response. 
  */
 typedef struct ocgeo_result {
-	int confidence;
 	char* formatted;
 
 	/* "bounds", may be "null" (invalid): */
@@ -136,9 +135,13 @@ typedef struct ocgeo_result {
 	char* state_district;
 	char* suburb;
 
+	int confidence;
+
 	/* 
 	 * Annotations, each may be NULL:
 	 */
+
+	int callingcode;
 
 	/* timezone annotation */
 	ocgeo_ann_timezone_t* timezone;
@@ -146,10 +149,14 @@ typedef struct ocgeo_result {
 	ocgeo_ann_roadinfo_t* roadinfo;
 	/* currency info */
 	ocgeo_ann_currency_t* currency;
+	char* geohash;
+	char* what3words;
 
+	struct ocgeo_result* next;
 	void* internal;
 } ocgeo_result_t;
 
+#define foreach_ocgeo_result(result,response) for(result=(response)->results;result!=NULL;result=result->next)
 typedef struct ocgeo_response {
 	/* Returned status */
 	ocgeo_status_t status;
