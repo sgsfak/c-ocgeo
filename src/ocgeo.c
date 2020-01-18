@@ -36,7 +36,7 @@
 #endif
 
 #ifndef OCGEO_VERSION
-#define OCGEO_VERSION 0.3.1
+#define OCGEO_VERSION "0.3.1"
 #endif
 
 
