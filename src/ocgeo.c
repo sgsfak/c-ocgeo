@@ -36,7 +36,7 @@
 #endif
 
 #ifndef OCGEO_VERSION
-#define OCGEO_VERSION 0.1.0
+#define OCGEO_VERSION 0.3.1
 #endif
 
 
@@ -142,6 +142,7 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
         result->ISO_alpha2 = JSON_OBJ_GET_STR(comp_js, "ISO_3166-1_alpha-2");
         result->ISO_alpha3 = JSON_OBJ_GET_STR(comp_js, "ISO_3166-1_alpha-3");
         result->type = JSON_OBJ_GET_STR(comp_js, "_type");
+        result->category = JSON_OBJ_GET_STR(comp_js, "_category");
         result->city = JSON_OBJ_GET_STR(comp_js, "city");
         result->city_district = JSON_OBJ_GET_STR(comp_js, "city_district");
         result->continent = JSON_OBJ_GET_STR(comp_js, "continent");

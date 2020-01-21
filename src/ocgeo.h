@@ -120,6 +120,9 @@ typedef struct ocgeo_result {
 	char* ISO_alpha2;
 	char* ISO_alpha3;
 	char* type;
+	/* The category of the "match", for the possible values see:
+	   https://github.com/OpenCageData/opencagedata-misc-docs/blob/master/category_values.md */
+	char* category;
 	char* city;
 	char* city_district;
 	char* continent;

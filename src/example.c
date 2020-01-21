@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
         int i=1;
         ocgeo_result_t* result;
         foreach_ocgeo_result(result, &response) {
-            printf("%2d. %s (type: %s, conf:%d)\n", i,
-                result->formatted, result->type, result->confidence);
+            printf("%2d. %s (type: %s, category: %s, conf:%d)\n", i,
+                result->formatted, result->type, result->category, result->confidence);
             ++i;
             printf("\tGeohash=%s, what3words=%s, calling code=%d\n",
                 result->geohash != NULL ? result->geohash : "",
