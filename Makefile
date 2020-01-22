@@ -3,9 +3,7 @@ OBJ=$(SOURCES:.c=.o)
 LIBNAME=libocgeo
 LIB=$(LIBNAME).a
 
-GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
-
-CFLAGS+=-Wall -Werror -fPIC -std=c99 -pedantic -O3 -DOCGEO_VERSION=\"$(GIT_VERSION)\"
+CFLAGS+=-Wall -Werror -fPIC -std=c99 -pedantic -O2
 LDLIBS=-lcurl -lm
 
 all: $(LIB) example ocgeo_tests
