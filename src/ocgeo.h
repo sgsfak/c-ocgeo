@@ -155,14 +155,13 @@ typedef struct ocgeo_result {
 	char* geohash;
 	char* what3words;
 
-	struct ocgeo_result* next;
 	void* internal;
 } ocgeo_result_t;
 
-#define foreach_ocgeo_result(result,response) for(result=(response)->results;result!=NULL;result=result->next)
 typedef struct ocgeo_response {
 	/* Returned status */
 	ocgeo_status_t status;
+    char* url; /* the actual URL used, based on the given params */
 
 	/* Rate information. If not returned (e.g. for paying customers)
 	   all its fields should be 0.
@@ -174,6 +173,10 @@ typedef struct ocgeo_response {
 
 	void* internal;
 } ocgeo_response_t;
+#define foreach_ocgeo_result(result,response) \
+	for(result=(response)->results;\
+		result!=(response)->results+(response)->total_results;\
+		result=result+1)
 
 typedef struct ocgeo_params {
 	void* callback_data;
@@ -241,14 +244,18 @@ typedef struct ocgeo_params {
 ocgeo_params_t ocgeo_default_params(void);
 
 /* Make a forward request i.e. find information about an address, place etc.
+   Returns false if there was an error contacting the server or parsing the
+   returned JSON reply.
    You can supply NULL as `params` and the default values will be used
 */
-ocgeo_response_t* ocgeo_forward(const char* query, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+bool ocgeo_forward(const char* query, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
 
 /* Make a reverse request i.e. find what exists in the given latitude and longtitude.
+   Returns false if there was an error contacting the server or parsing the
+   returned JSON reply.
    You can supply NULL as `params` and the default values will be used
 */
-ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
+bool ocgeo_reverse(double lat, double lng, const char* api_key, ocgeo_params_t* params, ocgeo_response_t* response);
 
 /* Free the memory used by the response of a forward or reverse call */
 void ocgeo_response_cleanup(ocgeo_response_t* r);

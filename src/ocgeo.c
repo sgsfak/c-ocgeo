@@ -109,14 +109,10 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
     cJSON* result_js;
     int k = 0;
     ocgeo_result_t proto = {0};
-    ocgeo_result_t** pprev = &response->results;
     for (result_js = obj->child; result_js!= NULL; result_js = result_js->next, k++) {
         ocgeo_result_t* result = response->results + k;
         *result = proto; /* initialize with 0/NULL values */
         result->internal = result_js;
-        /* keep them in a list for easy traversal */
-        (*pprev) = result;
-        pprev = &result->next;
 
         result->confidence = JSON_OBJ_GET_INT(result_js,"confidence");
         result->formatted = JSON_OBJ_GET_STR(result_js,"formatted");
@@ -203,7 +199,7 @@ parse_response_json(cJSON* json, ocgeo_response_t* response)
     return 0;
 }
 
-static ocgeo_response_t*
+static bool
 do_request(bool is_fwd, const char* q, const char* api_key, 
            ocgeo_params_t* params, ocgeo_response_t* response)
 {
@@ -214,11 +210,11 @@ do_request(bool is_fwd, const char* q, const char* api_key,
 
     /* Make sure that we have a proper response: */
     if (response == NULL)
-        return NULL;
+        return false;
 
     CURL *curl = curl_easy_init();
     if (curl == NULL) {
-        return NULL;
+        return false;
     }
 
     // Build URL:
@@ -256,6 +252,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
             params->bounds.northeast.lng, params->bounds.northeast.lat);
 
     log("URL=%s\n", url);
+	response->url = url;
 
     struct http_response r; r.data = sdsempty();
     sds user_agent = sdsempty();
@@ -270,14 +267,14 @@ do_request(bool is_fwd, const char* q, const char* api_key,
 
     if (res != CURLE_OK) {
         sdsfree(r.data);
-        return NULL;
+        return false;
     }
 
     cJSON* json = cJSON_Parse(r.data);
     sdsfree(r.data);
 
     if (json == NULL)
-        return NULL;
+        return false;
 
     if (params->dbg_callback != NULL) {
         char* str = cJSON_Print(json);
@@ -286,7 +283,7 @@ do_request(bool is_fwd, const char* q, const char* api_key,
     }
 
     parse_response_json(json, response);
-    return response;
+    return true;
 }
 
 ocgeo_params_t ocgeo_default_params(void)
@@ -299,20 +296,20 @@ ocgeo_params_t ocgeo_default_params(void)
     return params;
 }
 
-ocgeo_response_t* ocgeo_forward(const char* q, const char* api_key,
-        ocgeo_params_t* params, ocgeo_response_t* response)
+bool ocgeo_forward(const char* q, const char* api_key,
+		ocgeo_params_t* params, ocgeo_response_t* response)
 {
     return do_request(true, q, api_key, params, response);
 }
 
-ocgeo_response_t* ocgeo_reverse(double lat, double lng, const char* api_key,
+bool ocgeo_reverse(double lat, double lng, const char* api_key,
         ocgeo_params_t* params, ocgeo_response_t* response)
 {
     sds q = sdsempty();
     q = sdscatprintf(q, "%.8F,%.8F", lat, lng);
-    ocgeo_response_t* r = do_request(false, q, api_key, params, response);
+    bool ok = do_request(false, q, api_key, params, response);
     sdsfree(q);
-    return r;
+    return ok;
 }
 
 void ocgeo_response_cleanup(ocgeo_response_t* r)
@@ -332,6 +329,8 @@ void ocgeo_response_cleanup(ocgeo_response_t* r)
     r->results = NULL;
     cJSON_Delete(r->internal);
     r->internal = NULL;
+	sdsfree(r->url);
+	r->url = NULL;
 }
 
 static
