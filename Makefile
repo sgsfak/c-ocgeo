@@ -3,8 +3,9 @@ OBJ=$(SOURCES:.c=.o)
 LIBNAME=libocgeo
 LIB=$(LIBNAME).a
 
-CFLAGS+=-Wall -Werror -fPIC -std=c99 -pedantic -O2
-LDLIBS=-lcurl -lm
+CURL_CONFIG = curl-config
+CFLAGS += $(shell $(CURL_CONFIG) --cflags)
+LIBS += $(shell $(CURL_CONFIG) --libs)
 
 all: $(LIB) example ocgeo_tests
 
@@ -14,10 +15,10 @@ $(LIB): $(OBJ)
 	$(AR) $(ARFLAGS) $@ $^
 
 example: src/example.c $(LIB)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ocgeo_tests: tests/tests.c $(LIB)
-	$(CC) $(CFLAGS) -Isrc $(LDFLAGS) -o $@ tests/tests.c $(LIB) $(LDLIBS)
+	$(CC) $(CFLAGS) -Isrc $(LDFLAGS) -o $@ tests/tests.c $(LIB) $(LIBS)
 
 test: ocgeo_tests
 	@./$^
