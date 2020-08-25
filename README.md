@@ -167,3 +167,14 @@ Again, please have a look at `example.c` and `tests.c` files for examples.
 
   where `<version>` comes from the Git commit tag or hash and `<curl-version>` is the version of the libcurl used.
 
+* There's a `Dockerfile` that can be used to build a lightweight Docker image based on [Apline Linux](https://alpinelinux.org)   like so:
+
+  ```
+  docker build -t ocgeo .
+  ```
+  
+  and then run it (by passing the API key and the "query" in the command line):
+  
+  ```
+  docker run ocgeo <api-key> <query>
+  ```
