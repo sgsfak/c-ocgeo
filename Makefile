@@ -5,7 +5,7 @@ LIB=$(LIBNAME).a
 
 CURL_CONFIG = curl-config
 CFLAGS += $(shell $(CURL_CONFIG) --cflags)
-LIBS += $(shell $(CURL_CONFIG) --libs)
+LIBS += $(shell $(CURL_CONFIG) --libs) -lm
 
 all: $(LIB) example ocgeo_tests
 
